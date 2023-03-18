@@ -9,10 +9,10 @@
 
 
 # 注意和测试
-1. 经过对projectdiscover的katana的测试(参数仅使用 katana -u https://security-crawl-maze.app  -json) 和原版crawlergo (smart智能过滤不启用robots.txt解析和路径fuzz，填充post为username=admin&password=password) 对 https://security-crawl-maze.app 爬取以及crawlergo-plus(启用robots.txt,sitemap.xml,链接全点击,post参数为username=admin&password=password，以及采用noheadless，simple过滤模式)
+1. 经过对projectdiscover的katana的测试(参数仅使用 katana -u https://security-crawl-maze.app  -json) 和原版crawlergo (simple智能过滤启用robots.txt解析,不启用路径fuzz，填充post为username=admin&password=password) 对 https://security-crawl-maze.app 爬取以及crawlergo-plus(启用robots.txt,sitemap.xml,链接全点击,post参数为username=admin&password=password，以及采用noheadless，simple过滤模式)
 
-<br>katana: 15条结果(不重复)
-<br>crawlergo: 12条结果(不重复)
+<br>katana: 15条结果(不重复) [参数还没摸明白，在研究一下]
+<br>crawlergo: 322 条结果(不重复，存在不可用链接, 一些.found未找到)
 <br>crawlergo-plus: 711条(不重复,存在不可用链接，但是页面.found基本全部找到)
 
 

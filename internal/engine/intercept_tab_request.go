@@ -47,6 +47,46 @@ func (tab *Tab) AddTabRequestToResultList(req *httplib.RequestCrawler) {
 	tab.Lock.Unlock()
 }
 
+// AddResultFormCustomUrl 添加一个成果从自定义url
+func (tab *Tab) AddResultFormCustomUrl(method string, _url string, source string) {
+	navUrl := tab.NavigateRequest.URL
+	url, err := urllib.GetURL(_url, *navUrl)
+	if err != nil {
+		return
+	}
+	crawlerOption := httplib.OptionsCrawler{
+		Headers:  map[string]interface{}{},
+		PostData: "",
+	}
+	referer := navUrl.String()
+	// 处理Host绑定
+	if host, ok := tab.NavigateRequest.Headers["Host"]; ok {
+		if host != navUrl.Hostname() && url.Hostname() == host {
+			url, _ = urllib.GetURL(strings.Replace(url.String(), "://"+url.Hostname(), "://"+navUrl.Hostname(), -1), *navUrl)
+			crawlerOption.Headers["Host"] = host
+			referer = strings.Replace(navUrl.String(), navUrl.Host, host.(string), -1)
+		}
+	}
+	// 添加Cookie
+	if cookie, ok := tab.NavigateRequest.Headers["Cookie"]; ok {
+		crawlerOption.Headers["Cookie"] = cookie
+	}
+	// 修正Referer
+	crawlerOption.Headers["Referer"] = referer
+	for key, value := range tab.ExtraHeaders {
+		crawlerOption.Headers[key] = value
+	}
+	req := httplib.GetCrawlerRequest(method, url, crawlerOption)
+	req.Source = source
+	tab.Lock.Lock()
+	// 直接将结果添加到结果列表
+	tab.ResultList = append(tab.ResultList, req)
+	if tab.ResultCallback != nil {
+		_ = tab.ResultCallback(req)
+	}
+	tab.Lock.Unlock()
+}
+
 // InterceptTabRequest 拦截tab页的请求
 func (tab *Tab) InterceptTabRequest(v *fetch.EventRequestPaused) {
 	defer tab.WaitGroup.Done() // 完成后释放
@@ -140,7 +180,7 @@ func (tab *Tab) HandlerCrawlerNavigationRequest(req *httplib.RequestCrawler, v *
 	defer cancel()
 	overrideRequest := fetch.ContinueRequest(v.RequestID).WithURL(req.URL.String())
 	if tab.FoundRedirection && tab.IsTopFrame(v.FrameID.String()) { // 处理标签页的重定向标记
-		body := base64.StdEncoding.EncodeToString([]byte(`<html><body>universe</body></html>`))
+		body := base64.StdEncoding.EncodeToString([]byte(`<html><body>crawlergo</body></html>`))
 		param := fetch.FulfillRequest(v.RequestID, 200).WithBody(body)
 		_ = param.Do(ctx)
 		// 不对错误做处理
@@ -257,48 +297,9 @@ func (tab *Tab) ParseRequestURLFromResponseHeader(v *network.EventResponseReceiv
 	// 这个响应头也许也会包含诸多的链接
 	for key, _ := range v.Response.Headers {
 		if key == "Link" || key == "Content-Location" || key == "Location" || key == "Refresh" {
-			tab.AddResultFormCustomUrl(enums2.GET, v.Response.URL, enums2.FromJSFile)
+			tab.AddResultFormCustomUrl(enums2.GET, v.Response.URL, enums2.FromHeader)
 		}
 	}
-}
-
-// AddResultFormCustomUrl 添加一个成果从自定义url
-func (tab *Tab) AddResultFormCustomUrl(method string, _url string, source string) {
-	navUrl := tab.NavigateRequest.URL
-	url, err := urllib.GetURL(_url, *navUrl)
-	if err != nil {
-		return
-	}
-	crawlerOption := httplib.OptionsCrawler{
-		Headers:  map[string]interface{}{},
-		PostData: "",
-	}
-	referer := navUrl.String()
-	// 处理Host绑定
-	if host, ok := tab.NavigateRequest.Headers["Host"]; ok {
-		if host != navUrl.Hostname() && url.Hostname() == host {
-			url, _ = urllib.GetURL(strings.Replace(url.String(), "://"+url.Hostname(), "://"+navUrl.Hostname(), -1), *navUrl)
-			crawlerOption.Headers["Host"] = host
-			referer = strings.Replace(navUrl.String(), navUrl.Host, host.(string), -1)
-		}
-	}
-	// 添加Cookie
-	if cookie, ok := tab.NavigateRequest.Headers["Cookie"]; ok {
-		crawlerOption.Headers["Cookie"] = cookie
-	}
-	// 修正Referer
-	crawlerOption.Headers["Referer"] = referer
-	for key, value := range tab.ExtraHeaders {
-		crawlerOption.Headers[key] = value
-	}
-	req := httplib.GetCrawlerRequest(method, url, crawlerOption)
-	req.Source = source
-	tab.Lock.Lock()
-	tab.ResultList = append(tab.ResultList, req)
-	if tab.ResultCallback != nil {
-		_ = tab.ResultCallback(req)
-	}
-	tab.Lock.Unlock()
 }
 
 // GetContentCharset 从请求头中获取字符编码
@@ -318,6 +319,7 @@ func (tab *Tab) GetContentCharset(v *network.EventResponseReceived) {
 	}
 }
 
+// HandleRedirectionResponse  控制重定向响应
 func (tab *Tab) HandleRedirectionResponse(v *network.EventResponseReceivedExtraInfo) {
 	defer tab.WaitGroup.Done()
 	statusCode := tab.GetStatusCode(v.HeadersText)

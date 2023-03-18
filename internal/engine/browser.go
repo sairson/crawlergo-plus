@@ -98,8 +98,8 @@ func (browser *Browser) CloseTabsAndBrowser() {
 	}
 	// 关闭最终的浏览器
 	err := browserdp.Close().Do(*browser.Context)
+	defer (*browser.Cancel)()
 	if err != nil {
 		return
 	}
-	(*browser.Cancel)()
 }

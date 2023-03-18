@@ -10,6 +10,8 @@ import (
 	"github.com/sairson/crawlergo/internal/expression"
 	"github.com/sairson/crawlergo/internal/filter"
 	"github.com/sairson/crawlergo/internal/option"
+	"github.com/sairson/crawlergo/pkg/utils"
+	"strings"
 	"sync"
 	"time"
 )
@@ -265,9 +267,11 @@ func (crawler *Crawler) DeepCrawlerTaskPool(req *httplib.RequestCrawler) {
 	}()
 }
 
+// TabCrawlerTask 新建一个页面爬虫任务
 func (t *TabCrawler) TabCrawlerTask() {
 	defer t.crawler.WaitGroup.Done()
 	tab := engine2.NewCrawlerTab(t.browser, *t.request, engine2.TabConfig{
+		RootDomain:              t.crawler.RootDomain,
 		TabRunTimeout:           t.crawler.Option.TabRunTimeout,
 		DomContentLoadedTimeout: t.crawler.Option.DomContentLoadedTimeout,
 		EventTriggerMode:        t.crawler.Option.EventTriggerMode,
@@ -278,35 +282,40 @@ func (t *TabCrawler) TabCrawlerTask() {
 		CustomFormValues:        t.crawler.Option.CustomFormValues,
 		CustomFormKeywordValues: t.crawler.Option.CustomFormKeywordValues,
 		Custom401Auth:           t.crawler.Option.Custom401Auth,
-		RootDomain:              t.crawler.RootDomain,
 	})
-	tab.HrefClick = mapset.NewSet()               // 链接是否点击过了
-	tab.ResultCallback = t.crawler.ResultCallback // 回调函数必须有
+	tab.HrefClick = mapset.NewSet()         // 链接是否点击过了
+	tab.CollectLinkMapSet = mapset.NewSet() // 判断这个链接是否已经收集过了
+	// 存在结果时,会调用该回调函数
+	tab.ResultCallback = func(v *httplib.RequestCrawler) error {
+		if tab.CollectLinkMapSet.Contains(utils.CalcMD5Hash(v.URL.String())) {
+			return nil
+		}
+		tab.CollectLinkMapSet.Add(utils.CalcMD5Hash(v.URL.String()))
+		return t.crawler.ResultCallback(v)
+	}
 	tab.Start()
-	// 收集全部的tab页结果
+	// 结束后,我们在进行结果列表的整合
 	t.crawler.Result.MergeResultAttachLock.Lock()
 	t.crawler.Result.AllRequestList = append(t.crawler.Result.AllRequestList, tab.ResultList...)
 	t.crawler.Result.MergeResultAttachLock.Unlock()
 
-	// 智能过滤全部结果
-
-	for _, req := range tab.ResultList {
-		if t.crawler.Option.FilterMode == enums2.SimpleFilterMode {
-			if !t.crawler.SmartFilter.SimpleFilter.DoFilter(req) {
+	for _, v := range tab.ResultList {
+		if strings.ToLower(t.crawler.Option.FilterMode) == "simple" {
+			if !t.crawler.SmartFilter.SimpleFilter.DoFilter(v) {
 				t.crawler.Result.MergeResultAttachLock.Lock()
-				t.crawler.Result.RequestList = append(t.crawler.Result.RequestList, req)
+				t.crawler.Result.RequestList = append(t.crawler.Result.RequestList, v)
 				t.crawler.Result.MergeResultAttachLock.Unlock()
-				if !engine2.IsIgnoredByKeywordMatch(*req, t.crawler.Option.IgnoreKeywords) {
-					t.crawler.DeepCrawlerTaskPool(req)
+				if !engine2.IsIgnoredByKeywordMatch(*v, t.crawler.Option.IgnoreKeywords) {
+					t.crawler.DeepCrawlerTaskPool(v)
 				}
 			}
 		} else {
-			if !t.crawler.SmartFilter.DoFilter(req) {
+			if !t.crawler.SmartFilter.DoFilter(v) {
 				t.crawler.Result.MergeResultAttachLock.Lock()
-				t.crawler.Result.RequestList = append(t.crawler.Result.RequestList, req)
+				t.crawler.Result.RequestList = append(t.crawler.Result.RequestList, v)
 				t.crawler.Result.MergeResultAttachLock.Unlock()
-				if !engine2.IsIgnoredByKeywordMatch(*req, t.crawler.Option.IgnoreKeywords) {
-					t.crawler.DeepCrawlerTaskPool(req)
+				if !engine2.IsIgnoredByKeywordMatch(*v, t.crawler.Option.IgnoreKeywords) {
+					t.crawler.DeepCrawlerTaskPool(v)
 				}
 			}
 		}

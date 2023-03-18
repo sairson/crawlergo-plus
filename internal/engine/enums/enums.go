@@ -39,9 +39,6 @@ const (
 	DELETE  = "DELETE"
 	HEAD    = "HEAD"
 	OPTIONS = "OPTIONS"
-	TRACE   = "TRACE"
-	CONNECT = "CONNECT"
-	PATCH   = "PATCH"
 )
 
 var ChineseRegex = regexp.MustCompile("[\u4e00-\u9fa5]+")
@@ -88,11 +85,4 @@ const (
 	MaxParamKeyAllCount        = 10 // 本轮所有URL中某个参数名的重复修正最大值
 	MaxPathParamEmptyCount     = 10 // 某个path下的参数值为空，参数名个数修正最大值
 	MaxPathParamKeySymbolCount = 5  // 某个Path下的某个参数的标记数量超过此值，则该参数被全局标记
-)
-
-// 过滤模式
-const (
-	SimpleFilterMode = "simple"
-	SmartFilterMode  = "smart"
-	StrictFilterMode = "strict"
 )

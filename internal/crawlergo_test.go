@@ -12,7 +12,7 @@ import (
 
 func TestCrawler_Run(t *testing.T) {
 	var targets []*httplib.RequestCrawler
-	var urls = []string{"https://security-crawl-maze.app"}
+	var urls = []string{"http://testphp.vulnweb.com/"}
 	var postData string = "username=admin&password=password" // 提交的post数据
 	// 默认忽略的关键字
 	ignoreKeyWords := []string{"logout", "quit", "exit"}
@@ -20,7 +20,7 @@ func TestCrawler_Run(t *testing.T) {
 		EventTriggerMode:        enums.EventTriggerAsync,       // 事件的出发方式
 		EventTriggerInterval:    enums.EventTriggerInterval,    // 时间触发的间隔
 		BeforeExitDelay:         enums.BeforeExitDelay,         // 退出前的等待时间，等待DOM渲染，等待XHR发出捕获
-		NoHeadless:              true,                          // 无头模式
+		NoHeadless:              false,                         // 无头模式
 		DomContentLoadedTimeout: enums.DomContentLoadedTimeout, // dom节点的默认超时
 		TabRunTimeout:           enums.TabRunTimeout,           // 单个tab页的运行超时
 		EncodeURLWithCharset:    true,                          // 是否使用检测到的字符集自行编码
@@ -29,7 +29,7 @@ func TestCrawler_Run(t *testing.T) {
 		PathFuzz:                false,                         // 是否使用路径fuzz
 		PathFormSitemap:         true,
 		MaxTabCount:             8,
-		FilterMode:              "simple",
+		FilterMode:              "smart",
 		Custom401Auth: struct {
 			Username string
 			Password string
@@ -56,6 +56,7 @@ func TestCrawler_Run(t *testing.T) {
 	}
 	task, err := NewTabCrawlerGoTask(targets, defaultTaskOptions)
 	task.ResultCallback = func(i *httplib.RequestCrawler) error {
+		fmt.Println(i)
 		return nil
 	}
 	if err != nil {
@@ -63,9 +64,6 @@ func TestCrawler_Run(t *testing.T) {
 	}
 	// 开始爬虫
 	task.Run()
-	for _, v := range task.Result.AllRequestList {
-		fmt.Println(v)
-	}
 }
 
 func getOption(taskOptions option.TaskOptions, postData string) httplib.OptionsCrawler {

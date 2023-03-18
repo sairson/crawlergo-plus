@@ -13,7 +13,7 @@ func ConvertHeaders(h map[string]interface{}) map[string]string {
 	return a
 }
 
-func StrToMd5(str string) string {
+func CalcMD5Hash(str string) string {
 	h := md5.New()
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(nil))

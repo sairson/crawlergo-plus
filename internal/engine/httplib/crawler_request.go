@@ -123,14 +123,16 @@ func (req *RequestCrawler) CrawlerPostData() map[string]interface{} {
 	}
 }
 
+// UniqueId 计算请求头md5hash
 func (req *RequestCrawler) UniqueId() string {
 	if req.Redirection {
-		return utils.StrToMd5(req.NoHeaderId() + "Redirection")
+		return utils.CalcMD5Hash(req.NoHeaderId() + "Redirection")
 	} else {
 		return req.NoHeaderId()
 	}
 }
 
+// NoHeaderId 计算不带请求头的md5hash
 func (req *RequestCrawler) NoHeaderId() string {
-	return utils.StrToMd5(req.Method + req.URL.String() + req.PostData)
+	return utils.CalcMD5Hash(req.Method + req.URL.String() + req.PostData)
 }

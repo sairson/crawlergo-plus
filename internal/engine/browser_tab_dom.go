@@ -335,7 +335,7 @@ func (tab *Tab) ClickSubmitComponent() {
 	}
 	tCtx1, cancel1 := context.WithTimeout(ctx, time.Second*2)
 	defer cancel1()
-	_ = chromedp.Submit(formNodes, chromedp.ByNodeID).Do(tCtx1)
+	_ = chromedp.Submit(formNodes, chromedp.ByNodeID).Do(tCtx1) // 提交全部的表单
 
 	// 获取所有的input标签
 	inputNodes, inputErr := tab.GetNodeIDs(`form input[type=submit]`)

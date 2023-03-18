@@ -392,7 +392,7 @@ func (s *SmartFilter) getKeysID(dataMap map[string]interface{}) string {
 	for _, key := range keys {
 		idStr += key
 	}
-	return utils.StrToMd5(idStr)
+	return utils.CalcMD5Hash(idStr)
 }
 
 func (s *SmartFilter) getParamMapID(dataMap map[string]interface{}) string {
@@ -410,11 +410,11 @@ func (s *SmartFilter) getParamMapID(dataMap map[string]interface{}) string {
 			idStr += markReplaceRegex.ReplaceAllString(value, "{{mark}}")
 		}
 	}
-	return utils.StrToMd5(idStr)
+	return utils.CalcMD5Hash(idStr)
 }
 
 func (s *SmartFilter) getPathID(path string) string {
-	return utils.StrToMd5(path)
+	return utils.CalcMD5Hash(path)
 }
 
 func (s *SmartFilter) getMarkedUniqueID(req *httplib.RequestCrawler) string {
@@ -433,7 +433,7 @@ func (s *SmartFilter) getMarkedUniqueID(req *httplib.RequestCrawler) string {
 		uniqueStr += "https"
 	}
 
-	return utils.StrToMd5(uniqueStr)
+	return utils.CalcMD5Hash(uniqueStr)
 }
 
 func (s *SmartFilter) repeatCountStatistic(req *httplib.RequestCrawler) {
@@ -502,7 +502,7 @@ func (s *SmartFilter) repeatCountStatistic(req *httplib.RequestCrawler) {
 		return
 	}
 
-	parentPathId := utils.StrToMd5(req.URL.ParentPath())
+	parentPathId := utils.CalcMD5Hash(req.URL.ParentPath())
 	currentPath := strings.Replace(req.Filter.MarkedPath, req.URL.ParentPath(), "", -1)
 	if _, ok := s.filterParentPathValues.Load(parentPathId); !ok {
 		s.filterParentPathValues.Store(parentPathId, mapset.NewSet(currentPath))
@@ -619,7 +619,7 @@ func (s *SmartFilter) overCountMark(req *httplib.RequestCrawler) {
 	if req.URL.ParentPath() == "" || s.inCommonScriptSuffix(req.URL.FileExt()) {
 		return
 	}
-	parentPathId := utils.StrToMd5(req.URL.ParentPath())
+	parentPathId := utils.CalcMD5Hash(req.URL.ParentPath())
 	if set, ok := s.filterParentPathValues.Load(parentPathId); ok {
 		set := set.(mapset.Set)
 		if set.Cardinality() > enums.MaxParentPathCount {

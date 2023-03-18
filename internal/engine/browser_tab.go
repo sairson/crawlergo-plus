@@ -49,7 +49,8 @@ type Tab struct {
 	RemoveList           sync.WaitGroup // 移除事件监听
 	DomWaitGroup         sync.WaitGroup // DOMContentLoaded 的等待计数
 	FillFormWaitGroup    sync.WaitGroup // 填充表单任务
-	HrefClick            mapset.Set
+	HrefClick            mapset.Set     // 链接点击去重
+	CollectLinkMapSet    mapset.Set     // 收集结果去重
 }
 
 // TabConfig 每一个页面的配置信息

@@ -1,5 +1,5 @@
 # crawlergo-plus
-爬虫的暴力美学，在projectdiscover和原版crawlergo的基础上修改而来，目前只提供了测试，还没有完全修改好
+爬虫的暴力美学，在projectdiscover的katana和原版crawlergo的基础上修改而来，目前只提供了测试，还没有完全修改好
 <br> 1. 增加了对页面`<a href="#">`标签的暴力点击，但是做了对根域的判断，不会点击的超范围
 <br> 2. 增加了sitemap.xml的解析功能
 <br> 3. 增加了对响应头的解析
